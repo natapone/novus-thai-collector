@@ -1,0 +1,5 @@
+novus-thai-collector version 0.01
+=================================
+
+Set up Cron
+Command ==> cd /home/dong/src/NPC/novus-thai-collector/ && perl ./bin/01-collector.pl
