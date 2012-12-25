@@ -8,7 +8,7 @@ use novus::thai::schema;
 use novus::thai::utils;
 use Encode;
 
-my $sourcefile = 'tdict.txt';
+my $sourcefile = 'thai_stopword.txt';
 
 my $config = novus::thai::utils->get_config();
 my $schema = novus::thai::schema->connect(
@@ -28,9 +28,10 @@ while (<MYFILE>) {
 #        my $k = novus::thai::utils->trim($_);
         my $k = decode_utf8($_);
         my $l = length($k);
-        my $result = $keywords->find_or_create(
+        my $result = $keywords->update_or_create(
                         {
                             name   => $_,
+                            is_stopword => 1,
                             length => $l,
                         }, { key   => 'keyword_name_key' }
         );
@@ -38,12 +39,5 @@ while (<MYFILE>) {
         print "$_ --> Create ", $result->id, ": ", $result->name, " length = ", $result->length ,"\n";
     }
     
-    
-#    my $xxx = 'เกรียน';
-#    print "$xxx length = ", length($xxx), "\n";
-#    print "$xxx length decode = ", length( decode_utf8($xxx)   ), "\n";
-#    
-   
-#    exit;
 }
 close (MYFILE); 
