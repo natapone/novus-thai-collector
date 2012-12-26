@@ -25,7 +25,7 @@ my $schema = novus::thai::schema->connect(
 my $keywords = $schema->resultset('Keyword')->search_rs({ 
                                                     active => 1 
                                                 },{
-#                                                    rows => 500
+#                                                    rows => 100
                                                 });
 
 my $dict_count = $keywords->count;
@@ -37,7 +37,9 @@ my $progress_bar = Term::ProgressBar->new($dict_count);
 while (my $keyword = $keywords->next) {
 #    print $keyword->id, ": ", $keyword->name, "    l== ", $keyword->length, "\n";
     
-    $dict_words->{$keyword->name} = $keyword->id;
+    my $keyword_name = decode_utf8($keyword->name);
+#    my $keyword_name = $keyword->name;
+    $dict_words->{$keyword_name} = $keyword->id;
     $maxlength =  $keyword->length if ($keyword->length > $maxlength );
     
     

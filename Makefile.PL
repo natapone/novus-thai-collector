@@ -3,7 +3,8 @@ use ExtUtils::MakeMaker;
 
 require Try::Tiny;
 require WWW::Curl::Simple;
-
+require Moose;
+require Storable;
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
