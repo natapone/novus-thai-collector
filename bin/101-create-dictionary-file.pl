@@ -23,7 +23,8 @@ my $schema = novus::thai::schema->connect(
                                 );
 
 my $keywords = $schema->resultset('Keyword')->search_rs({ 
-                                                    active => 1 
+                                                    active => 1,
+#                                                    length => 1,
                                                 },{
 #                                                    rows => 100
                                                 });
@@ -38,6 +39,7 @@ while (my $keyword = $keywords->next) {
 #    print $keyword->id, ": ", $keyword->name, "    l== ", $keyword->length, "\n";
     
     my $keyword_name = decode_utf8($keyword->name);
+    $keyword_name = lc($keyword_name);
 #    my $keyword_name = $keyword->name;
     $dict_words->{$keyword_name} = $keyword->id;
     $maxlength =  $keyword->length if ($keyword->length > $maxlength );
