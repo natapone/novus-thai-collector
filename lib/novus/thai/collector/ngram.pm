@@ -5,7 +5,8 @@ use warnings;
 use Encode;
 use Moose;
 
-has 'windowsize'   => (is => 'rw', isa => 'Int', default => 3);
+has 'windowsize'   => (is => 'rw', isa => 'Int', default => 5);
+has 'min_windowsize'   => (is => 'rw', isa => 'Int', default => 1);
 has 'min_count'    => (is => 'rw', isa => 'Int', default => 2);
 has 'normalize'    => (is => 'rw', isa => 'Int', default => 0);
 
@@ -69,7 +70,8 @@ sub return_ngrams {
     
     my $ret = {};
     
-    for (my $n_count = $n; $n_count >= 1; $n_count--) {
+    for (my $n_count = $n; $n_count >= $self->{min_windowsize}; $n_count--) {
+#    for (my $n_count = $n; $n_count >= 1; $n_count--) {
         my $total = $self->{total}[$n_count]; # total for each gram
         my $ids_count = $self->{table}[$n_count];
         
@@ -77,15 +79,20 @@ sub return_ngrams {
             my $count = $ids_count->{$ids};
             $count = ($opt_normalize ? ($count / $total ) : $count); # normalize
             
-            if ($n_count > 1) {
-                # return only frequency >= min_count
-                if ($ids_count->{$ids} >= $self->{min_count}) {
-                    $ret->{$self->_id_to_token($ids)} = $count;
-                }
-                
-            } else {
+#            if ($n_count > 1) {
+#                # return only frequency >= min_count
+#                if ($ids_count->{$ids} >= $self->{min_count}) {
+#                    $ret->{$self->_id_to_token($ids)} = $count;
+#                }
+#                
+#            } else {
+#                $ret->{$self->_id_to_token($ids)} = $count;
+#            }
+            
+            if ($ids_count->{$ids} >= $self->{min_count}) {
                 $ret->{$self->_id_to_token($ids)} = $count;
             }
+            
         }
     }
     return $ret;
@@ -99,6 +106,7 @@ sub _id_to_token {
         map { $self->{token_S}->[$_] } split(/ /, shift @_);
     }
     return join(' ', @r);
+#    return join('', @r);
 }
 
 1;
