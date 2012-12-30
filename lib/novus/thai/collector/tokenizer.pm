@@ -53,6 +53,7 @@ sub BUILD {
 sub tokenize {
     my $self = shift;
     my $context = shift;
+    $context = decode_utf8($context); # fix encoding
     
     my $breaked_string;
     my $breaked_string_id;
