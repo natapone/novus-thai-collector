@@ -20,6 +20,8 @@ has 'dict_filename'     => (is => 'rw', isa => 'Str', default => './etc/novus_th
 has 'debug'             => (is => 'rw', isa => 'Int', default => 0);
 
 my $dict_words;
+my $dict_ids;
+my $vowel_list;
 my $config;
 my $schema;
 
@@ -39,15 +41,48 @@ sub BUILD {
         die $self->{'dict_filename'}. " not exist!";
     }
     
-    # Init file for wordbreak
+    # Init file for wordbreak {keyword => id}
     my $dict_ref = retrieve($self->{'dict_filename'});
     $dict_words  = $$dict_ref ;  # dereferencing
+    $dict_ref = undef; # clean up unused large variable
+    
+    # create hash of {id => keyword}
+    my %dict_ids_hash = reverse %$dict_words;
+    $dict_ids = \%dict_ids_hash; 
     
     print "Finish retrieving ", $self->{'dict_filename'}, "\n" if ($self->{'debug'} > 0);
     
     # get max length
     $self->{'dict_maxlength'} = $schema->resultset('Sysconfig')->find('DICT_MAXLENGTH')->configvalue;
     
+    # Init Vowel list
+    my $vowel_configs = $schema->resultset('Sysconfig')->search_rs({
+                                                        configname => { 'like' => 'IS_VOWEL%'},
+                                                                    });
+    
+    while (my $vowel_config = $vowel_configs->next) {
+        $vowel_list->{$vowel_config->configvalue} = 1;
+    }
+    
+}
+
+sub id_to_keyword {
+    my $self = shift;
+    my $id_list = shift;
+    
+    my @ids = split(' ', $id_list);
+    my @id_keywords;
+    
+    foreach (@ids) {
+        my $id_keyword = $dict_ids->{$_};
+        if (defined($id_keyword)) {
+            push(@id_keywords, $id_keyword);
+         } else {
+            warn "missing keyword '$_'";
+         }
+    }
+    
+    return join(" ", @id_keywords);;
 }
 
 sub tokenize {
@@ -79,27 +114,31 @@ sub tokenize {
             
             # if find --> cut and save --> back to l1
             if ($dict_words->{$portion_2}) {
+                # validate Thai vowel rule, first next portion cant be in vowel list!, 1 Thai char = 3 slots
+                my $chk_vowel = substr($context, length($portion_2), 1);
                 
-                my $id_tohash = $dict_words->{$portion_2};
-                
-                # Set found
-                $p2_hit =1;
-                print ("---found $id_tohash = $portion_2 \n") if ($self->{'debug'} > 2);
-                
-                # add keyword_id to gen topic
-                $vsm_id      = _add_to_vsm($vsm_id, $id_tohash);
-                $vsm_keyword = _add_to_vsm($vsm_keyword, $portion_2);
-                
-                # add string sequence to gen n-gram
-                push(@result_keywords, $portion_2);
-                
-                #n-gram by id
-                push(@result_ids, $id_tohash);
-                
-                # remove extracted word from source
-                $context = substr($context, length($portion_2), length($context));
-                
-                $portion_2 = '';
+                if (!defined($vowel_list->{$chk_vowel})) { # if vowel => just skip; dict will picks next shorter word
+                    my $id_tohash = $dict_words->{$portion_2};
+                    
+                    # Set found
+                    $p2_hit =1;
+                    print ("---found $id_tohash = $portion_2 \n") if ($self->{'debug'} > 2);
+                    
+                    # add keyword_id to gen topic
+                    $vsm_id      = _add_to_vsm($vsm_id, $id_tohash);
+                    $vsm_keyword = _add_to_vsm($vsm_keyword, $portion_2);
+                    
+                    # add string sequence to gen n-gram
+                    push(@result_keywords, $portion_2);
+                    
+                    #n-gram by id
+                    push(@result_ids, $id_tohash);
+                    
+                    # remove extracted word from source
+                    $context = substr($context, length($portion_2), length($context));
+                    
+                    $portion_2 = '';
+                }
             }
             $portion_2 = _chop_last_str($portion_2, 1);
             print ("portion_2 = $portion_2 -- ".length($portion_2)." \n") if ($self->{'debug'} > 3);
