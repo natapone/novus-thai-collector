@@ -112,6 +112,7 @@ foreach my $gram (
 
     $max_f = $ngrams->{$gram} if ($ngrams->{$gram} > $max_f);
 #    my $gram_score = 1 + log($ngrams->{$gram}); # tf log scale
+#    my $gram_score = $ngrams->{$gram}; # raw score
     my $gram_score = $ngrams->{$gram} / $max_f; # tf
     if ($idf->{$gram}) {
         $gram_score = $ngrams->{$gram} * $idf->{$gram} ;
@@ -134,6 +135,8 @@ print "Mean score = $mean_gram_score \n";
 my $r_count = keys %$sorted_results;
 print "Size = ", $r_count, "\n";
 
+
+
 # show sorted
 foreach my $sorted_result ( 
     sort { $sorted_results->{$b} <=> $sorted_results->{$a} }
@@ -147,23 +150,43 @@ foreach my $sorted_result (
     # resort score
     
 #    my $ngram_keywords = $tokenizer->id_to_keyword($sorted_result);
-#    print "    $sorted_result (", encode_utf8($ngram_keywords) , ") score = ", $sorted_results->{$sorted_result}, "\n";
+#    print "X    $sorted_result (", encode_utf8($ngram_keywords) , ") score = ", $sorted_results->{$sorted_result}, "\n";
     my ($best_label, $r) = $cs->best_for_label($sorted_result);
 #    print "            best = ", encode_utf8($tokenizer->id_to_keyword($best_label)),
-#    "  current best score=", $sorted_results->{$best_label},
+#    "  score=", $sorted_results->{$best_label},
 #    "  c=", $r->cosine ,
 #    "  p=", $ngrams->{$best_label}, "/", $ngrams->{$sorted_result},
 #    "=", $ngrams->{$best_label} / $ngrams->{$sorted_result},
 #    "  idf=", $idf->{$best_label}, "/", $idf->{$sorted_result},
 #    "=", $idf->{$best_label} / $idf->{$sorted_result},
 #    "\n";
-    
+
+#    my @all_labels = $cs->all_for_label($sorted_result);
+#    foreach (@all_labels) {
+#        if ($_->cosine > 0) {
+##            print "xxx all_labels=",Dumper($_);
+#            my @similar_labels = $_->labels;
+#            my $similar_label = $similar_labels[1];
+##            print "similar_label=",Dumper($similar_label);
+##            print "        ++++ ",$similar_label," (", encode_utf8($tokenizer->id_to_keyword($similar_label)), ")  ==> ", $sorted_results->{$similar_label} ," \n";
+#            
+#                print "            label = ", encode_utf8($tokenizer->id_to_keyword($similar_label)),
+#                "  current best score=", $sorted_results->{$similar_label},
+#                "  c=", $_->cosine ,
+#                "  p=", $ngrams->{$similar_label}, "/", $ngrams->{$sorted_result},
+#                "=", $ngrams->{$similar_label} / $ngrams->{$sorted_result},
+#                "  idf=", $idf->{$similar_label}, "/", $idf->{$sorted_result},
+#                "=", $idf->{$similar_label} / $idf->{$sorted_result},
+#                "\n";
+#        }
+#    }
+#    exit;
     
     if ( defined($sorted_results->{$sorted_result}) and defined($sorted_results->{$best_label})  ) {
         # Compare score
         if ($sorted_results->{$sorted_result} > $sorted_results->{$best_label} ) {
             # Check cosine similarlity
-            if ($r->cosine > 0.75) {
+            if ($r->cosine > 0.5) {
                 # Cal conditional probability
                 my $con_prob = $ngrams->{$best_label} / $ngrams->{$sorted_result};
                 if ($con_prob >=0.5 and $con_prob <= 1) {
@@ -171,81 +194,153 @@ foreach my $sorted_result (
                     
 #                    print Dumper($r); exit;
                     
-                    foreach ($r->labels) {
-                        print "    ---- $_ (", encode_utf8($tokenizer->id_to_keyword($_)), ")  ==> ", $sorted_results->{$_} ," \n";
-                    }
+#                    foreach ($r->labels) {
+#                        print "    ---- $_ (", encode_utf8($tokenizer->id_to_keyword($_)), ")  ==> ", $sorted_results->{$_} ," \n";
+#                    }
                     
-                    
-                    $sorted_results->{$best_label} = $sorted_results->{$sorted_result};
+#                    my $idf_tmp = defined($idf->{$sorted_result}) ? $idf->{$sorted_result} : 1;
+#                    $sorted_results->{$best_label} = $sorted_results->{$sorted_result} * $idf_tmp ;
                     print "1*** ", encode_utf8($tokenizer->id_to_keyword($best_label)) , " == ", $sorted_results->{$best_label}, "\n";
-                    delete $sorted_results->{$sorted_result};
+#                    delete $sorted_results->{$sorted_result};
+                    $sorted_results->{$sorted_result} = 0;
                 }
             }
         }
     }
-    
+#    my $idf_tmp = defined($idf->{$sorted_result}) ? $idf->{$sorted_result} : 1;
+#    $sorted_results->{$sorted_result} = $sorted_results->{$sorted_result} * $idf_tmp if (!$move_score);
 }
 
 $r_count = keys %$sorted_results;
 print "Size = ", $r_count, "\n";
 
 
+my $dup_detected=0;
 ##################
-#$cs = Data::CosineSimilarity->new;
-#foreach my $sorted_result ( 
-#    keys %$sorted_results ) {
-#    
-#    # similarlity check
-#    my $vsm = _list_to_vsm($sorted_result);
-#    $cs->add( $sorted_result => $vsm );
-#    
-#}
+$cs = Data::CosineSimilarity->new;
+foreach my $sorted_result ( 
+    keys %$sorted_results ) {
+    
+    # similarlity check
+    my $vsm = _list_to_vsm($sorted_result);
+    $cs->add( $sorted_result => $vsm );
+    
+}
 
-#foreach my $sorted_result ( 
-#    sort { $sorted_results->{$b} <=> $sorted_results->{$a} }
-#    keys %$sorted_results ) {
-#    
-#    # similarlity score shift
-#    # move score IF (in case org score is higher that best label's score')
-##        1. cosine similarlity > 0.75
-##        2. conditional probability P(best keyword) / P(org keyword)  > 0.5
-##        3  conditional probability is less than 1 -> wrong calculation
-#    # resort score
-#    
-##    my $ngram_keywords = $tokenizer->id_to_keyword($sorted_result);
-##    print "    $sorted_result (", encode_utf8($ngram_keywords) , ") score = ", $sorted_results->{$sorted_result}, "\n";
-#    my ($best_label, $r) = $cs->best_for_label($sorted_result);
-##    print "            best = ", encode_utf8($tokenizer->id_to_keyword($best_label)),
-##    "  current best score=", $sorted_results->{$best_label},
-##    "  c=", $r->cosine ,
-##    "  p=", $ngrams->{$best_label}, "/", $ngrams->{$sorted_result},
-##    "=", $ngrams->{$best_label} / $ngrams->{$sorted_result},
-##    "  idf=", $idf->{$best_label}, "/", $idf->{$sorted_result},
-##    "=", $idf->{$best_label} / $idf->{$sorted_result},
-##    "\n";
-#    
-#    if ( defined($sorted_results->{$sorted_result}) and defined($sorted_results->{$best_label})  ) {
-#    # Compare score
-#    if ($sorted_results->{$sorted_result} > $sorted_results->{$best_label} ) {
-#        # Check cosine similarlity
-#        if ($r->cosine > 0.75) {
-#            # Cal conditional probability
-#            my $con_prob = $ngrams->{$best_label} / $ngrams->{$sorted_result};
-#            if ($con_prob >=0.5 and $con_prob <= 1) {
-#                # move score to best label
-#                    $sorted_results->{$best_label} = $sorted_results->{$sorted_result};
-#                    print "2*** ", encode_utf8($tokenizer->id_to_keyword($best_label)) , " == ", $sorted_results->{$best_label}, "\n";
+foreach my $sorted_result ( 
+    sort { $sorted_results->{$b} <=> $sorted_results->{$a} }
+    keys %$sorted_results ) {
+    
+#    my $ngram_keywords = $tokenizer->id_to_keyword($sorted_result);
+#    print "    $sorted_result (", encode_utf8($ngram_keywords) , ") score = ", $sorted_results->{$sorted_result}, "\n";
+    my ($best_label, $r) = $cs->best_for_label($sorted_result);
+    
+    if ( defined($sorted_results->{$sorted_result}) and defined($sorted_results->{$best_label})  ) {
+    # Compare score
+    if ($sorted_results->{$sorted_result} > $sorted_results->{$best_label} ) {
+        # Check cosine similarlity
+        if ($r->cosine > 0.5) {
+            # Cal conditional probability
+            my $con_prob = $ngrams->{$best_label} / $ngrams->{$sorted_result};
+            if ($con_prob >=0.5 and $con_prob <= 1) {
+                # move score to best label
+                    $sorted_results->{$best_label} = $sorted_results->{$sorted_result};
+                    print "2*** ", encode_utf8($tokenizer->id_to_keyword($best_label)) , " == ", $sorted_results->{$best_label}, "\n";
 #                    delete $sorted_results->{$sorted_result};
-#            }
-#        }
-#    }
-#    }
-#    
-#}
-#$r_count = keys %$sorted_results;
-#print "Size = ", $r_count, "\n";
+                    $sorted_results->{$sorted_result} = 0;
+            }
+        }
+    }
+    }
+    
+}
+$r_count = keys %$sorted_results;
+print "Size = ", $r_count, "\n";
 #################
 
+##################
+$cs = Data::CosineSimilarity->new;
+foreach my $sorted_result ( 
+    keys %$sorted_results ) {
+    
+    # similarlity check
+    my $vsm = _list_to_vsm($sorted_result);
+    $cs->add( $sorted_result => $vsm );
+    
+}
+
+foreach my $sorted_result ( 
+    sort { $sorted_results->{$b} <=> $sorted_results->{$a} }
+    keys %$sorted_results ) {
+    
+#    my $ngram_keywords = $tokenizer->id_to_keyword($sorted_result);
+#    print "    $sorted_result (", encode_utf8($ngram_keywords) , ") score = ", $sorted_results->{$sorted_result}, "\n";
+    my ($best_label, $r) = $cs->best_for_label($sorted_result);
+    
+    if ( defined($sorted_results->{$sorted_result}) and defined($sorted_results->{$best_label})  ) {
+    # Compare score
+    if ($sorted_results->{$sorted_result} > $sorted_results->{$best_label} ) {
+        # Check cosine similarlity
+        if ($r->cosine > 0.5) {
+            # Cal conditional probability
+            my $con_prob = $ngrams->{$best_label} / $ngrams->{$sorted_result};
+            if ($con_prob >=0.5 and $con_prob <= 1) {
+                # move score to best label
+                    $sorted_results->{$best_label} = $sorted_results->{$sorted_result};
+                    print "3*** ", encode_utf8($tokenizer->id_to_keyword($best_label)) , " == ", $sorted_results->{$best_label}, "\n";
+#                    delete $sorted_results->{$sorted_result};
+                    $sorted_results->{$sorted_result} = 0;
+            }
+        }
+    }
+    }
+    
+}
+$r_count = keys %$sorted_results;
+print "Size = ", $r_count, "\n";
+#################
+
+##################
+$cs = Data::CosineSimilarity->new;
+foreach my $sorted_result ( 
+    keys %$sorted_results ) {
+    
+    # similarlity check
+    my $vsm = _list_to_vsm($sorted_result);
+    $cs->add( $sorted_result => $vsm );
+    
+}
+
+foreach my $sorted_result ( 
+    sort { $sorted_results->{$b} <=> $sorted_results->{$a} }
+    keys %$sorted_results ) {
+    
+#    my $ngram_keywords = $tokenizer->id_to_keyword($sorted_result);
+#    print "    $sorted_result (", encode_utf8($ngram_keywords) , ") score = ", $sorted_results->{$sorted_result}, "\n";
+    my ($best_label, $r) = $cs->best_for_label($sorted_result);
+    
+    if ( defined($sorted_results->{$sorted_result}) and defined($sorted_results->{$best_label})  ) {
+    # Compare score
+    if ($sorted_results->{$sorted_result} > $sorted_results->{$best_label} ) {
+        # Check cosine similarlity
+        if ($r->cosine > 0.5) {
+            # Cal conditional probability
+            my $con_prob = $ngrams->{$best_label} / $ngrams->{$sorted_result};
+            if ($con_prob >=0.5 and $con_prob <= 1) {
+                # move score to best label
+                    $sorted_results->{$best_label} = $sorted_results->{$sorted_result};
+                    print "4*** ", encode_utf8($tokenizer->id_to_keyword($best_label)) , " == ", $sorted_results->{$best_label}, "\n";
+#                    delete $sorted_results->{$sorted_result};
+                    $sorted_results->{$sorted_result} = 0;
+            }
+        }
+    }
+    }
+    
+}
+$r_count = keys %$sorted_results;
+print "Size = ", $r_count, "\n";
+#################
 
 # after remove dup
 # show sorted
