@@ -1,18 +1,22 @@
-use 5.014002;
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-require Try::Tiny;
-require WWW::Curl::Simple;
-require Moose;
-require Storable;
+name 'novus-thai-collector';
+all_from 'lib/novus/thai/collector.pm';
 
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
-WriteMakefile(
-    NAME              => 'novus::thai::collector',
-    VERSION_FROM      => 'lib/novus/thai/collector.pm', # finds $VERSION
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
-    ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/novus/thai/collector.pm', # retrieve abstract from module
-       AUTHOR         => 'Dong <dong@>') : ()),
-);
+requires 'novus::thai::schema';
+requires 'novus::thai::utils';
+
+requires 'Moose';
+requires 'Encode';
+requires 'Storable';
+requires 'Data::Dumper';
+requires 'Exporter';
+
+test_requires 'DBD::SQLite';
+test_requires 'DateTime::Format::SQLite';
+
+install_script glob('bin/*');
+auto_install;
+
+WriteAll;
+
