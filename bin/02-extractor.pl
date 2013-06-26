@@ -25,7 +25,9 @@ our $schema = novus::thai::schema->connect(
                                 $config->{connect_info}[3], 
                                 );
 
-my $directory = '/home/dong/src/NPC/novus_thai_data';
+
+
+my $directory = $config->{'novus-thai-root'}.'/novus_thai_data';
 opendir (DIR, $directory) or die $!;
 
 while (my $file = readdir(DIR)) {
