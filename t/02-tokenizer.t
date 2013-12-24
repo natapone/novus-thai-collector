@@ -24,8 +24,12 @@ my $context = "ส.ส.กทม.เพื่อไทยหยุดเสน�
 #'รมว.อุตสาหกรรม พอใจโรดโชว์อินเดีย-บังคลาเทศ ดึงยักษ์ใหญ่ลงทุนในไทย'
 
 
-my $tokenizer = novus::thai::collector::tokenizer->new('debug' => 0 );
+my $tokenizer = novus::thai::collector::tokenizer->new('debug' => 2 );
 my $tokens = $tokenizer->tokenize($context);
+
+#print Dumper($tokens);
+
+print join("-", (@{$tokens->{'token'}->{'keyword'}})) , "\n";
 
 is(defined($tokens->{'vsm'}->{'id'}), 1, "Return VSM of id correctly" );
 is(defined($tokens->{'vsm'}->{'keyword'}), 1, "Return VSM of keywords correctly" );
