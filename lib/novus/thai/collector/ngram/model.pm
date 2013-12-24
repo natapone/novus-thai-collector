@@ -5,8 +5,7 @@ use warnings;
 use Moose;
 
 use Storable;
-#use Term::ProgressBar;
-use Term::ProgressBar 2.00;
+use Term::ProgressBar;
 
 use novus::thai::utils;
 use novus::thai::schema;
@@ -25,8 +24,8 @@ Lingua::Model::Ngram::Text
 Create Thai language from N-gram language model 2nd order Markov
 
 =cut
-has 'filename'  => (is => 'rw', isa => 'Str', lazy => 1, default => "ngram_count.hash");
-has 'filepath'  => (is => 'rw', isa => 'Str', lazy => 1, builder => '_build_filepath');
+has 'ngram_filename'  => (is => 'rw', isa => 'Str', lazy => 1, default => "ngram_count.hash");
+has 'ngram_filepath'  => (is => 'rw', isa => 'Str', lazy => 1, builder => '_build_ngram_filepath');
 
 has 'timeslot_start' => (is => 'rw', isa => 'Str', lazy => 1, default => "2012-01-01 00:00:00");
 has 'timeslot_end'   => (is => 'rw', isa => 'Str', lazy => 1, default => "2013-01-01 00:00:00");
@@ -72,10 +71,17 @@ sub _build_ngram_counter {
     return Lingua::Model::Ngram::Count->new();
 }
 
-sub _build_filepath {
+sub _build_ngram_filepath {
     my $self = shift;
     
-    return "./etc/".$self->filename;
+    return "./etc/".$self->ngram_filename;
+}
+
+sub restore_ngram_count {
+    my $self = shift;
+    
+    
+    return;
 }
 
 sub ngram_count {
@@ -133,12 +139,12 @@ sub ngram_count {
     print "Count Item == ", $items->count(), "\n";
     
     # save hash to file
-    print "Save Ngram count to ", $self->filepath, "\n";
+    print "Save Ngram count to ", $self->ngram_filepath, "\n";
     store(
-        $self->ngram_counter->return_ngram_count, $self->filepath
-    ) || die "can't store to ",$self->filepath,"\n";
+        $self->ngram_counter->return_ngram_count, $self->ngram_filepath
+    ) || die "can't store to ",$self->ngram_filepath,"\n";
     
-    return $self->filepath;
+    return $self->ngram_filepath;
 }
 
 sub _add_context_to_ngram_counter {
@@ -170,4 +176,4 @@ sub _add_context_to_ngram_counter {
 
 
 
-
+1;
