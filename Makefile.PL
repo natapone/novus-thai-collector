@@ -5,6 +5,7 @@ all_from 'lib/novus/thai/collector.pm';
 
 requires 'novus::thai::schema';
 requires 'novus::thai::utils';
+requires 'Lingua::Model::Ngram';
 
 requires 'Moose';
 requires 'Encode';
