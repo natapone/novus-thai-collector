@@ -12,6 +12,7 @@ use novus::thai::schema;
 use novus::thai::collector::tokenizer;
 
 use Lingua::Model::Ngram::Text;
+use Lingua::Model::Ngram::Count;
 
 use Data::Dumper;
 
@@ -80,8 +81,7 @@ sub _build_ngram_filepath {
 sub restore_ngram_count {
     my $self = shift;
     
-    
-    return;
+    return retrieve($self->ngram_filepath) || die "Missing Ngram file @ ", $self->ngram_filepath;
 }
 
 sub ngram_count {
@@ -128,7 +128,7 @@ sub ngram_count {
         
         $i_count++;
         
-        if($i_count % 1000 == 0) {
+        if($i_count % 100 == 0) {
             $progress_bar->update($i_count);
         }
 #        exit;
