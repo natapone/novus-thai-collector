@@ -11,6 +11,7 @@ use Moose;
 use Storable;
 use novus::thai::utils;
 use novus::thai::schema;
+use Try::Tiny;
 
 use Data::Dumper;
 
@@ -88,7 +89,11 @@ sub id_to_keyword {
 sub tokenize {
     my $self = shift;
     my $context = shift;
-    $context = decode_utf8($context); # fix encoding
+    
+    # Try to decode, Skip if keyword is already UTF-8
+    try {
+        $context = decode_utf8($context, Encode::FB_CROAK);
+    };
     
     my $breaked_string;
     my $breaked_string_id;

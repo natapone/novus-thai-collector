@@ -12,6 +12,7 @@ requires 'Encode';
 requires 'Storable';
 requires 'Data::Dumper';
 requires 'Exporter';
+requires 'Try::Tiny';
 
 test_requires 'DBD::SQLite';
 test_requires 'DateTime::Format::SQLite';

@@ -10,6 +10,7 @@ use Encode;
 use Storable;
 use Term::ProgressBar;
 use Data::Dumper;
+use Try::Tiny;
 
 my $dict_words = ();
 my $dict_file = 'novus_thai_dict.dict';
@@ -38,7 +39,15 @@ my $progress_bar = Term::ProgressBar->new($dict_count);
 while (my $keyword = $keywords->next) {
 #    print $keyword->id, ": ", $keyword->name, "    l== ", $keyword->length, "\n";
     
-    my $keyword_name = decode_utf8($keyword->name);
+    my $keyword_name;
+    
+    # Try to decode, Skip if keyword is already UTF-8
+    try {
+        $keyword_name = decode_utf8($keyword->name, Encode::FB_CROAK);
+    } catch {
+        $keyword_name = $keyword->name;
+    };
+    
     $keyword_name = lc($keyword_name);
 #    my $keyword_name = $keyword->name;
     $dict_words->{$keyword_name} = $keyword->id;
