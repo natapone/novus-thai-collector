@@ -140,13 +140,18 @@ sub ngram_count {
 #    print "ngram_counter == ", Dumper($self->ngram_counter->return_ngram_count), "\n";
     print "Count Item == ", $items->count(), "\n";
     
-    # save hash to file
-    print "Save Ngram count to ", $self->ngram_filepath, "\n";
-    store(
-        $self->ngram_counter->return_ngram_count, $self->ngram_filepath
-    ) || die "can't store to ",$self->ngram_filepath,"\n";
-    
-    return $self->ngram_filepath;
+    if ($return_mode == 1) {
+        # save hash to file
+        print "Save Ngram count to ", $self->ngram_filepath, "\n";
+        store(
+            $self->ngram_counter->return_ngram_count, $self->ngram_filepath
+        ) || die "can't store to ",$self->ngram_filepath,"\n";
+        
+        return $self->ngram_filepath;
+    } elsif ($return_mode == 2) {
+        # return ngram count as hashref
+        return $self->ngram_counter->return_ngram_count;
+    }
 }
 
 sub _ngram_map_reduce {

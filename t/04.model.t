@@ -15,6 +15,9 @@ subtest 'Create Count N-grams hash' => sub {
                                 ngram_filepath  => './test_count.hash',
     );
     
+    my $count_hash = $model_engine->ngram_count(2);
+    isa_ok($count_hash, 'HASH', "Return Hash if return mode = 2");
+    
     my $count_file = $model_engine->ngram_count();
     
     ok((-e $count_file), "Save Ngram count @ $count_file");
