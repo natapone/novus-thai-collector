@@ -6,6 +6,7 @@ use Moose;
 
 use Storable;
 use Term::ProgressBar;
+use Data::CosineSimilarity;
 
 use novus::thai::utils;
 use novus::thai::schema;
@@ -86,6 +87,7 @@ sub restore_ngram_count {
 
 sub ngram_count {
     my $self = shift;
+    my $return_mode = shift || 1; # 1 = file path, 2 = return_ngram_count
     
     my $timestamp_start = novus::thai::utils->string_to_timestamp($self->timeslot_start);
     my $timestamp_end   = novus::thai::utils->string_to_timestamp($self->timeslot_end);
@@ -145,6 +147,89 @@ sub ngram_count {
     ) || die "can't store to ",$self->ngram_filepath,"\n";
     
     return $self->ngram_filepath;
+}
+
+sub _ngram_map_reduce {
+    my $self = shift;
+    my $ngram_count = shift;
+    
+    print Dumper($ngram_count);
+    
+    print "Start map reduce duplicate keys.....!\n";
+    my $cs = Data::CosineSimilarity->new;
+    
+    # create VSM for similarlity check
+    foreach my $ngram ( keys %$ngram_count ) {
+        my $vsm = _list_to_vsm($ngram);
+        $cs->add( $ngram => $vsm );
+    }
+    
+    foreach my $ngram ( 
+        sort { $self->_key_length($a) <=> $self->_key_length($b) }
+        keys %$ngram_count ) {
+        
+        print $ngram , " l=", $self->_key_length($ngram) , "\n";
+        
+        my ($best_label, $r) = $cs->best_for_label($ngram);
+        
+        print Dumper($best_label);
+        print Dumper($r);
+    }
+    
+    
+###    foreach my $ngram ( 
+###        sort { $self->_key_length($a) <=> $self->_key_length($b) }
+###        keys %$ngram_count ) {
+###        
+###        print $ngram , " l=", $self->_key_length($ngram) , "\n";
+###        
+#####        delete $ngram_count->{'18837-11243'}; 
+#####        $ngram_count->{'18758-18550-18837-11243'}++;
+###        
+###        # get similar key
+###        
+###        # compare similarity
+###        
+###    }
+###    
+#####    my $key1 = "18837-11243";
+#####    
+#####    my @keys = grep m/$key1/so => keys %{$ngram_count};
+#####    print Dumper(\@keys);
+    
+#    print Dumper($ngram_count);
+}
+
+sub _list_to_vsm {
+    my $str_id = shift;
+    my $vsm = {};
+    
+    my @ids = split('-', $str_id);
+    foreach (@ids) {
+        $vsm = _add_to_vsm($vsm, $_);
+    }
+    
+    return $vsm;
+}
+
+sub _add_to_vsm {
+    my ($vsm, $new_key) = @_;
+    
+    if ($vsm->{$new_key}) {
+        $vsm->{$new_key}++;
+    } else {
+        $vsm->{$new_key} = 1;
+    }
+    
+    return $vsm;
+}
+
+sub _key_length {
+    my $self = shift;
+    my $key = shift;
+    
+    my @keys = split('-', $key);
+    return scalar @keys;
 }
 
 sub _add_context_to_ngram_counter {

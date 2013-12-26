@@ -39,3 +39,20 @@ subtest 'Create Count N-grams hash' => sub {
 };
 
 
+##subtest 'Map reduce N-grams' => sub {
+##    my $ngram_count = {
+##            '6069-4995-10849' => 1,
+##            '6069-4994-1087' => 1,
+##            '18758-18550-18837-11243' => 1,
+##            '18550-18837-11243' => 2,
+##            '18758-18550' => 3,
+##            '18837-11243' => 4,
+##    };
+##    
+##    my $model_engine = novus::thai::collector::ngram::model->new(
+##                                ngram_filepath  => './test_count.hash',
+##    );
+##    
+##    $model_engine->_ngram_map_reduce($ngram_count);
+##    
+##}

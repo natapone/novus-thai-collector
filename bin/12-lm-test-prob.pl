@@ -26,10 +26,11 @@ my $context14 = "โรล่า";
 # initial engine
 our $tokenizer = novus::thai::collector::tokenizer->new('debug' => 0 );
 # restore hash 
-my $ngram_count = retrieve('./etc/ngram_count_500k.hash') || die "Missing Ngram file";
 our $model_engine = Lingua::Model::Ngram->new(
-                                        ngram_count     => $ngram_count,
-                                    );
+                    ngram_count => retrieve('./etc/ngram_count_500k.hash') || die "Missing Ngram file",
+                );
+
+
 
 _cal_prob($context1);
 _cal_prob($context2);
@@ -48,7 +49,9 @@ sub _cal_prob {
     my $id_tokens = $tokens->{'token'}->{'id'};
     my $p = $model_engine->sentence_probability($id_tokens);
     
-    print _fix_wild_char_print(join("-", (@{$tokens->{'token'}->{'keyword'}})))  , " probability = " , $p , "\n";
+    print _fix_wild_char_print(join("-", (@{$tokens->{'token'}->{'keyword'}}))) ,
+        " [", join("-", (@{$tokens->{'token'}->{'id'}})) , "]",
+        " probability = " , $p , "\n";
 }
 
 sub _fix_wild_char_print {
