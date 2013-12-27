@@ -105,7 +105,8 @@ sub ngram_count {
                                         ],
                                     }
                                 } , {
-#                                    rows => 34
+#                                    rows => 100,
+                                    ORDER_BY => "RANDOM()",
                                 }
                             );
     
@@ -122,14 +123,15 @@ sub ngram_count {
         my $context = $item->title;
         
         $self->_add_context_to_ngram_counter($context);
-        
         if ($item->description) {
             $context = $item->description;
             $self->_add_context_to_ngram_counter($context);
         }
         
-        $i_count++;
+        # Doc end, add DF
+        $self->ngram_counter->add_df;
         
+        $i_count++;
         if($i_count % 100 == 0) {
             $progress_bar->update($i_count);
         }

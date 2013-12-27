@@ -31,9 +31,15 @@ subtest 'Create Count N-grams hash' => sub {
     # read from storage, use path from 'filepath'
     my $ngram_count = $model_engine->restore_ngram_count();
     
-    ok($ngram_count->{'CORPUS'} > 0, "CORPUS size > 0 => ". $ngram_count->{'CORPUS'});
-    ok($ngram_count->{'*-*'} > 0, "Start sequence '*-*' > 0 => ". $ngram_count->{'*-*'});
-    ok($ngram_count->{'*'} > 0, "Start sequence '*' > 0 => ". $ngram_count->{'*'});
+    # Term frequency
+    ok($ngram_count->{'CORPUS'}->{'TF'} > 0, "TF CORPUS size > 0 => ". $ngram_count->{'CORPUS'}->{'TF'});
+    ok($ngram_count->{'*-*'}->{'TF'} > 0, "TF Start sequence '*-*' > 0 => ". $ngram_count->{'*-*'}->{'TF'});
+    ok($ngram_count->{'*'}->{'TF'} > 0, "TF Start sequence '*' > 0 => ". $ngram_count->{'*'}->{'TF'});
+    
+    # Document frequency
+    ok($ngram_count->{'CORPUS'}->{'DF'} > 0, "DF CORPUS size > 0 => ". $ngram_count->{'CORPUS'}->{'DF'});
+    ok($ngram_count->{'*-*'}->{'DF'} > 0, "DF Start sequence '*-*' > 0 => ". $ngram_count->{'*-*'}->{'DF'});
+    ok($ngram_count->{'*'}->{'DF'} > 0, "DF Start sequence '*' > 0 => ". $ngram_count->{'*'}->{'DF'});
     
 #    print "ngram_count == ", Dumper($ngram_count);
     
