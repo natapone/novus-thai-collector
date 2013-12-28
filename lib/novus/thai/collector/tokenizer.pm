@@ -117,7 +117,11 @@ sub tokenize_id {
         my $tokens = $self->tokenize($_);
         
 #        print Dumper($tokens->{'token'}->{'id'});
-        push(@t_ids, $tokens->{'token'}->{'id'});
+#        exit;
+        if (defined($tokens->{'token'}->{'id'}) and scalar @{$tokens->{'token'}->{'id'}} > 0) {
+            push(@t_ids, $tokens->{'token'}->{'id'});
+        }
+        
     }
     
     return \@t_ids;

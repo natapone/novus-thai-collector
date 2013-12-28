@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use Test::More tests => 9;
+use Test::More tests => 10;
 BEGIN { use_ok('novus::thai::collector') };
 BEGIN { use_ok('novus::thai::schema') };
 BEGIN { use_ok('novus::thai::utils') };
@@ -22,6 +22,7 @@ my $context = "ส.ส.กทม.“เพื่อไทย”หยุดเ�
 # "ส.ส.กทม.เพื่อไทยหยุดเสนอชื่อ 'สุดารัตน์'ชิงผู้ว่าฯกทม."
 #'พี่เป้นั่งตากลมตากลม'
 #'รมว.อุตสาหกรรม พอใจโรดโชว์อินเดีย-บังคลาเทศ ดึงยักษ์ใหญ่ลงทุนในไทย'
+# ทำไม .. ?????(3)
 
 # เครืองหยายวรรคตอน
 # http://www.tlcthai.com/education/knowledge-online/content-edu/thai-content-edu/16641.html
@@ -65,4 +66,20 @@ my $expect_token_ids = [
           ]
         ];
 is_deeply($token_ids, $expect_token_ids, "Return tokens with split at possible keyword");
+
+$context = "ทำไม .. ?????(3)";
+$token_ids = $tokenizer->tokenize_id($context);
+#print Dumper($token_ids);
+$expect_token_ids = [
+          [
+            5652
+          ],
+          [
+            28898
+          ]
+        ];
+is_deeply($token_ids, $expect_token_ids, "remove empty token");
+
+
+
 
