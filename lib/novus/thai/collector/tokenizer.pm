@@ -23,6 +23,7 @@ has 'debug'             => (is => 'rw', isa => 'Int', default => 0);
 my $dict_words;
 my $dict_ids;
 my $vowel_list;
+my $entity_list;
 my $config;
 my $schema;
 
@@ -65,6 +66,16 @@ sub BUILD {
         $vowel_list->{$vowel_config->configvalue} = 1;
     }
     
+    # Init simple entity marking list
+    my $entity_configs = $schema->resultset('Sysconfig')->search_rs({
+                                                        configname => { 'like' => 'is_entity%'},
+                                                                    });
+    my @ent;
+    while (my $entity_config = $entity_configs->next) {
+#        $entity_list->{$entity_config->configvalue} = 1;
+        push(@ent, "\\" . $entity_config->configvalue);
+    }
+    $entity_list = join('|', @ent);
 }
 
 sub id_to_keyword {
@@ -84,6 +95,32 @@ sub id_to_keyword {
     }
     
     return join(" ", @id_keywords);;
+}
+
+# new implement tokenize
+# return only ID
+# split sentence at keyword to address more probability in mode => *, W1, STOP
+sub tokenize_id {
+    my $self = shift;
+    my $context = shift;
+    
+    # Try to decode, Skip if keyword is already UTF-8
+    try {
+        $context = decode_utf8($context, Encode::FB_CROAK);
+        $entity_list = decode_utf8($entity_list, Encode::FB_CROAK);
+    };
+    
+    # ***** check if is_entity => split sentence   \[\]\(\)\{\}\⟨\⟩\:\!\‘\’\“\”\'\"\;\?
+    my @contexts = split(/$entity_list/, $context);
+    my @t_ids;
+    for (@contexts) {
+        my $tokens = $self->tokenize($_);
+        
+#        print Dumper($tokens->{'token'}->{'id'});
+        push(@t_ids, $tokens->{'token'}->{'id'});
+    }
+    
+    return \@t_ids;
 }
 
 sub tokenize {
@@ -150,6 +187,7 @@ sub tokenize {
             
         }
         # if not find --> cut 1 char --> back to l1
+#        print ("Portion not found, strip '", substr($context, 0, 1), "'\n") unless ($p2_hit);
         $context = substr($context, 1, length($context)) unless ($p2_hit);
 #        exit;
     }
