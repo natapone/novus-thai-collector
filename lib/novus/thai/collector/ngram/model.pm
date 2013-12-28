@@ -103,7 +103,13 @@ sub ngram_count {
                                             $timestamp_start,
                                             $timestamp_end,
                                         ],
-                                    }
+                                    },
+                                    feedid => {
+                                        '-or' => {
+                                            '<' => 99,
+                                            '>' => 122 
+                                        }
+                                    }, # skip item from Pantip
                                 } , {
 #                                    rows => 100,
                                     ORDER_BY => "RANDOM()",
@@ -243,22 +249,30 @@ sub _add_context_to_ngram_counter {
     my $self = shift;
     my $context = shift;
     
-    my $tokens = $self->tokenizer->tokenize($context);
-    my $id_tokens = $tokens->{'token'}->{'id'};
-#    print "-- id to keyword", $self->tokenizer->id_to_keyword( join(' ', @$id_tokens) );
+#    print "context == $context \n";
+    my $tokens = $self->tokenizer->tokenize_id($context);
+#    print Dumper($tokens);
     
-    # 2nd order Markov use ngram from 3 - 0
-    my $markov_order = 2;
-    for my $ngram_size ( 0 .. $markov_order + 1) {
-        my $params = {
-            start_stop => 1,
-            window_size => $ngram_size,
-        };
-        my $ngrams = $self->text_engine->ngram($id_tokens, $params);
-#        print "ngrams == ", Dumper($ngrams), "\n";
+    foreach my $token (@$tokens) {
         
-        $self->ngram_counter->add_ngram($ngrams);
+        my $id_tokens = $token;
+#        print "-- id to keyword", $self->tokenizer->id_to_keyword( join(' ', @$id_tokens) ) , "\n";
+        
+        # 2nd order Markov use ngram from 3 - 0
+        my $markov_order = 2;
+        for my $ngram_size ( 0 .. $markov_order + 1) {
+            my $params = {
+                start_stop => 1,
+                window_size => $ngram_size,
+            };
+            my $ngrams = $self->text_engine->ngram($id_tokens, $params);
+#            print "ngrams == ", Dumper($ngrams), "\n";
+            
+            $self->ngram_counter->add_ngram($ngrams);
+        }
     }
+    
+    
 ##    print "CORPUS == ", $self->ngram_counter->return_ngram_count->{'CORPUS'}, "\n";
 }
 
