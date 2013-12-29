@@ -81,8 +81,9 @@ sub BUILD {
 sub id_to_keyword {
     my $self = shift;
     my $id_list = shift;
+    my $space = shift || ' ';
     
-    my @ids = split(' ', $id_list);
+    my @ids = split($space, $id_list);
     my @id_keywords;
     
     foreach (@ids) {

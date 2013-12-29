@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use Test::More tests => 10;
+use Test::More tests => 12;
 BEGIN { use_ok('novus::thai::collector') };
 BEGIN { use_ok('novus::thai::schema') };
 BEGIN { use_ok('novus::thai::utils') };
@@ -80,6 +80,11 @@ $expect_token_ids = [
         ];
 is_deeply($token_ids, $expect_token_ids, "remove empty token");
 
+my $id_list = '1 1 1 1 1';
+my $expected_string = decode_utf8('ก ก ก ก ก');
+my $token_string = $tokenizer->id_to_keyword($id_list);
+is($token_string, $expected_string, "id $id_list to token is correct");
 
-
-
+$id_list = '1-1-1-1-1';
+$token_string = $tokenizer->id_to_keyword($id_list, '-');
+is($token_string, $expected_string, "id $id_list to token is correct");
