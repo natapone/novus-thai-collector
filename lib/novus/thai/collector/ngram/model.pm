@@ -111,7 +111,7 @@ sub ngram_count {
                                         }
                                     }, # skip item from Pantip
                                 } , {
-#                                    rows => 100,
+                                    rows => 100_000,
                                     ORDER_BY => "RANDOM()",
                                 }
                             );
@@ -129,9 +129,27 @@ sub ngram_count {
         my $context = $item->title;
         
         $self->_add_context_to_ngram_counter($context);
+        # add description
         if ($item->description) {
             $context = $item->description;
             $self->_add_context_to_ngram_counter($context);
+        }
+        # add keyword from category
+        if ($item->category) {
+            if ($item->category =~ /\{(.+)\}/) {
+#                print "match == $1 \n";
+                my $categories = eval "[$1]";
+                
+                foreach my $category (@$categories) {
+#                    print "    ---- $category \n";
+                    $self->_add_context_to_ngram_counter($category);
+                }
+                
+            } else {
+#                print "not match == ", $item->category ," \n";
+                $self->_add_context_to_ngram_counter($item->category);
+            }
+            
         }
         
         # Doc end, add DF
