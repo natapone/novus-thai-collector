@@ -126,6 +126,11 @@ sub ngram_count {
     my $i_count = 0;
     
     while (my $item = $items->next) {
+        # item data
+##        print "title = ", $item->title, "\n";
+##        print "description = ", $item->description, "\n";
+##        print "category = ", $item->category, "\n";
+        
         my $context = $item->title;
         
         $self->_add_context_to_ngram_counter($context);
