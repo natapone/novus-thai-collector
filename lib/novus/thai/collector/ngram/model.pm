@@ -28,6 +28,7 @@ Create Thai language from N-gram language model 2nd order Markov
 =cut
 has 'ngram_filename'  => (is => 'rw', isa => 'Str', lazy => 1, default => "ngram_count.hash");
 has 'ngram_filepath'  => (is => 'rw', isa => 'Str', lazy => 1, builder => '_build_ngram_filepath');
+has 'ngram_order'       => (is => 'rw', isa => 'Str', lazy => 1, default => 2); # 2 order Markov chain
 
 has 'timeslot_start' => (is => 'rw', isa => 'Str', lazy => 1, default => "2012-01-01 00:00:00");
 has 'timeslot_end'   => (is => 'rw', isa => 'Str', lazy => 1, default => "2013-01-01 00:00:00");
@@ -313,8 +314,7 @@ sub _add_context_to_ngram_counter {
 #        print "-- id to keyword", $self->tokenizer->id_to_keyword( join(' ', @$id_tokens) ) , "\n";
         
         # 2nd order Markov use ngram from 3 - 0
-        my $markov_order = 2;
-        for my $ngram_size ( 0 .. $markov_order + 1) {
+        for my $ngram_size ( 0 .. $self->ngram_order + 1) {
             my $params = {
                 start_stop => 1,
                 window_size => $ngram_size,
