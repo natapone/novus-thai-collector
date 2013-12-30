@@ -44,6 +44,8 @@ has 'text_engine' => (is => 'ro', isa => 'Lingua::Model::Ngram::Text',
 has 'ngram_counter' => (is => 'ro', isa => 'Lingua::Model::Ngram::Count', 
                     lazy => 1, builder => '_build_ngram_counter');
 
+has 'ngram_category'  => (is => 'rw', isa => 'Str', lazy => 1, default => 0); # all cats
+
 sub _build_config {
     return novus::thai::utils->get_config();
 }
@@ -96,6 +98,35 @@ sub ngram_count {
     print "Time start = ",$self->timeslot_start," ==> $timestamp_start \n";
     print "Time end   = ",$self->timeslot_end," ==> $timestamp_end \n";
     
+    my $categories = $self->schema->resultset('Category');
+    
+    my $feeds;
+    if ($self->ngram_category > 0) {
+        my $category = $categories->find($self->ngram_category);
+        
+        # list feeds from category
+        $feeds = $category->feeds;
+        
+    } else {
+        $feeds = $self->schema->resultset('Feed');
+        
+    }
+    
+    # skip feed from Pantip
+    $feeds = $feeds->search(
+        {
+            id => {
+                    '-or' => {
+                        '<' => 99,
+                        '>' => 122 
+                    }
+                },
+        }, { ORDER_BY => 'id' }
+    );
+    
+    my @feed_list = $feeds->get_column('id')->all;
+    print "feed_list == ", join('-', @feed_list), "\n";
+    
     my $items = $self->schema->resultset('Item')->search(
                                 { 
                                     timestamp => {
@@ -105,11 +136,10 @@ sub ngram_count {
                                         ],
                                     },
                                     feedid => {
-                                        '-or' => {
-                                            '<' => 99,
-                                            '>' => 122 
-                                        }
-                                    }, # skip item from Pantip
+                                        'in' => \@feed_list
+                                    },
+                                    
+                                    
                                 } , {
                                     rows => 100_000,
                                     ORDER_BY => "RANDOM()",
@@ -123,8 +153,8 @@ sub ngram_count {
                             name    => 'Count ngram',
                         });
     
+    # -------------
     my $i_count = 0;
-    
     while (my $item = $items->next) {
         # item data
 ##        print "title = ", $item->title, "\n";
@@ -167,6 +197,7 @@ sub ngram_count {
 #        exit;
     }
     $progress_bar->update($items->count());
+    # -------------
     
 #    print "ngram_counter == ", Dumper($self->ngram_counter->return_ngram_count), "\n";
     print "Count Item == ", $items->count(), "\n";

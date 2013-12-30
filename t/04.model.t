@@ -4,7 +4,7 @@ use warnings;
 
 use Data::Dumper;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 BEGIN { use_ok('Lingua::Model::Ngram::Count') };
 BEGIN { use_ok('novus::thai::collector::ngram::model') };
 
@@ -47,6 +47,17 @@ subtest 'Create Count N-grams hash' => sub {
     if(-e $count_file) { unlink($count_file); }
 };
 
+subtest 'Create Count N-grams hash by category' => sub {
+    my $model_engine = novus::thai::collector::ngram::model->new(
+                                ngram_category  => 7, # ข่าวด่วน
+                                timeslot_start  => "2013-01-01 06:00:00",
+                                timeslot_end    => "2013-01-01 07:00:00",
+    );
+    
+    my $count_hash = $model_engine->ngram_count(2);
+    isa_ok($count_hash, 'HASH', "Return Hash of ngram count by category");
+    
+}
 
 ##subtest 'Map reduce N-grams' => sub {
 ##    my $ngram_count = {
