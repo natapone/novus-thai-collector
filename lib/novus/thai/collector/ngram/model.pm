@@ -30,6 +30,8 @@ has 'ngram_filename'  => (is => 'rw', isa => 'Str', lazy => 1, default => "ngram
 has 'ngram_filepath'  => (is => 'rw', isa => 'Str', lazy => 1, builder => '_build_ngram_filepath');
 has 'ngram_order'       => (is => 'rw', isa => 'Str', lazy => 1, default => 2); # 2 order Markov chain
 
+has 'is_summarizer'     => (is => 'rw', isa => 'Str', lazy => 1, default => 0);
+
 has 'timeslot_start' => (is => 'rw', isa => 'Str', lazy => 1, default => "2012-01-01 00:00:00");
 has 'timeslot_end'   => (is => 'rw', isa => 'Str', lazy => 1, default => "2013-01-01 00:00:00");
 
@@ -319,6 +321,8 @@ sub _add_context_to_ngram_counter {
                 start_stop => 1,
                 window_size => $ngram_size,
             };
+            $params->{'start_stop'} = 0 if($self->is_summarizer == 1);
+            
             my $ngrams = $self->text_engine->ngram($id_tokens, $params);
 #            print "ngrams == ", Dumper($ngrams), "\n";
             
