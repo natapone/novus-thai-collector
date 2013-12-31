@@ -4,7 +4,10 @@ use strict;
 use warnings;
 use Moose;
 
+use Storable;
+
 use novus::thai::collector::ngram::model;
+use Lingua::Model::Ngram;
 
 use Data::Dumper;
 
@@ -28,8 +31,20 @@ has 'timeslot_end'   => (is => 'rw', isa => 'Str', lazy => 1, default => "2014-0
 has 'nt_model_engine'   => (is => 'ro', isa => 'novus::thai::collector::ngram::model', 
                         lazy => 1, builder => '_build_nt_model_engine');
 
+has 'prob_engine'   => (is => 'ro', isa => 'Lingua::Model::Ngram', 
+                        lazy => 1, builder => '_build_prob_engine');
+
 has 'min_count'         => (is => 'rw', isa => 'Int', default => 3);
 has 'min_key_length'    => (is => 'rw', isa => 'Int', default => 2);
+
+
+sub _build_prob_engine {
+    my $self = shift;
+    
+    return Lingua::Model::Ngram->new(
+                    ngram_count => retrieve($self->ngram_filepath) || die "Missing Ngram file",
+                );
+}
 
 sub _build_nt_model_engine {
     my $self = shift;
@@ -66,6 +81,7 @@ sub summarize {
             and ( 
                 $ngram ne '*' and $ngram ne '*-*' and 
                 $ngram ne 'STOP' and $ngram ne '*-*-STOP' and $ngram ne '*-STOP'
+                and $ngram ne 'CORPUS'
             )
         ) {
 #            print "count $ngram == ", $ngram_count->{$ngram}->{'TF'} , "/", $ngram_count->{$ngram}->{'DF'} , " l=$key_length " , "\n";
@@ -80,24 +96,23 @@ sub summarize {
                 $tf_score  *= $idf_score;
 #                print "    TF-IDF => $tf_score \n\n";
             }
-            
             $key_phrases->{$ngram}->{'TFIDF'} = $tf_score;
+            
+            # Cal probability
+            my @id_tokens = split('-', $ngram);
+            my $p = $self->prob_engine->sentence_probability(\@id_tokens);
+            $key_phrases->{$ngram}->{'PROB'} = $p;
+##            print "    Prob => $p \n";
+##            print "\n";
+            
+            # Score
+            $key_phrases->{$ngram}->{'SCORE'} 
+#                = $tf_score * $p * $key_length;
+                = ($tf_score * $p) * log($key_length);
+#                = $tf_score * $p;
+#                = log( ($ngram_count->{$ngram}->{'TF'} + 1) * $p ) * log($total_doc / $ngram_count->{$ngram}->{'DF'});
         }
     }
-    
-    # clean up memory
-    $ngram_count = undef;
-    
-    # calculate probability
-####    foreach my $ngram ( 
-#####        sort { $key_phrases->{$a}->{'key_length'} <=> $key_phrases->{$b}->{'key_length'} }
-####        sort { $key_phrases->{$b}->{'TFIDF'} <=> $key_phrases->{$a}->{'TFIDF'} }
-####        keys %$key_phrases ) {
-####        
-####        print $ngram, " ";
-####        print Dumper($key_phrases->{$ngram});
-####        
-####    }
     
 #    print Dumper($key_phrases);
     return $key_phrases;
