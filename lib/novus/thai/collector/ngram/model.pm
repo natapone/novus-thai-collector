@@ -115,17 +115,19 @@ sub ngram_count {
         
     }
     
-    # skip feed from Pantip
-    $feeds = $feeds->search(
-        {
-            id => {
-                    '-or' => {
-                        '<' => 99,
-                        '>' => 122 
-                    }
-                },
-        }, { ORDER_BY => 'id' }
-    );
+    # skip feed from Pantip if creating language model
+    if ($self->is_summarizer == 0) {
+        $feeds = $feeds->search(
+            {
+                id => {
+                        '-or' => {
+                            '<' => 99,
+                            '>' => 122 
+                        }
+                    },
+            }, { ORDER_BY => 'id' }
+        );
+    }
     
     my @feed_list = $feeds->get_column('id')->all;
     print "feed_list == ", join('-', @feed_list), "\n";
