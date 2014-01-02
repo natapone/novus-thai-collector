@@ -48,7 +48,7 @@ has 'ngram_counter' => (is => 'ro', isa => 'Lingua::Model::Ngram::Count',
                     lazy => 1, builder => '_build_ngram_counter');
 
 has 'ngram_category'  => (is => 'rw', isa => 'Str', lazy => 1, default => 0); # all cats
-has 'map_reduce_similarlity' => (is => 'rw', isa => 'Num', lazy => 1, default => 0.70);
+has 'map_reduce_similarlity' => (is => 'rw', isa => 'Num', lazy => 1, default => 0.75);
 
 sub _build_config {
     return novus::thai::utils->get_config();

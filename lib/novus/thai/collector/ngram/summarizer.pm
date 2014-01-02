@@ -70,7 +70,6 @@ sub summarize {
     
     # 2 = return hash
     my $ngram_count = $self->nt_model_engine->ngram_count(2); 
-#    print Dumper($ngram_count ); exit;
     
     my $key_phrases;
     my $total_doc = $ngram_count->{'CORPUS'}->{'DF'}; # total number for documents
@@ -86,17 +85,8 @@ sub summarize {
         ) {
 #            print "count $ngram == ", $ngram_count->{$ngram}->{'TF'} , "/", $ngram_count->{$ngram}->{'DF'} , " l=$key_length " , "\n";
             $key_phrases->{$ngram}->{'key_length'} = $key_length;
-#            $key_phrases->{$ngram}->{'TF'} = $ngram_count->{$ngram}->{'TF'};
-#            $key_phrases->{$ngram}->{'DF'} = $ngram_count->{$ngram}->{'DF'};
-            
-            # Cal TF-IDF
-            my $tf_score    = log($ngram_count->{$ngram}->{'TF'} + 1); # tf log scale
-            if ($ngram_count->{$ngram}->{'DF'} != 0) {
-                my $idf_score   = log($total_doc / $ngram_count->{$ngram}->{'DF'});
-                $tf_score  *= $idf_score;
-#                print "    TF-IDF => $tf_score \n\n";
-            }
-            $key_phrases->{$ngram}->{'TFIDF'} = $tf_score;
+            $key_phrases->{$ngram}->{'TF'} = $ngram_count->{$ngram}->{'TF'};
+            $key_phrases->{$ngram}->{'DF'} = $ngram_count->{$ngram}->{'DF'};
             
             # Cal probability
             my @id_tokens = split('-', $ngram);
@@ -105,13 +95,31 @@ sub summarize {
 ##            print "    Prob => $p \n";
 ##            print "\n";
             
+        }
+    }
+    
+    $key_phrases = $self->nt_model_engine->_ngram_map_reduce($key_phrases);
+    
+    foreach my $ngram ( keys %$key_phrases ) {
+        # Cal TF-IDF
+        if($key_phrases->{$ngram}->{'TF'} > 0){
+            my $tf_score    = log($key_phrases->{$ngram}->{'TF'} + 1); # tf log scale
+            if ($key_phrases->{$ngram}->{'DF'} != 0) {
+                my $idf_score   = log($total_doc / $key_phrases->{$ngram}->{'DF'});
+                $tf_score  *= $idf_score;
+    #            print "    TF-IDF => $tf_score \n\n";
+            }
+            $key_phrases->{$ngram}->{'TFIDF'} = $tf_score;
+            
             # Score
             $key_phrases->{$ngram}->{'SCORE'} 
-#                = $tf_score * $p * $key_length;
-                = ($tf_score * $p) * log($key_length);
-#                = $tf_score * $p;
-#                = log( ($ngram_count->{$ngram}->{'TF'} + 1) * $p ) * log($total_doc / $ngram_count->{$ngram}->{'DF'});
+                = ($tf_score * $key_phrases->{$ngram}->{'PROB'}) * log($key_phrases->{$ngram}->{'key_length'});
+                
+                
+        } else {
+            $key_phrases->{$ngram}->{'SCORE'} = 0;
         }
+        
     }
     
 #    print Dumper($key_phrases);

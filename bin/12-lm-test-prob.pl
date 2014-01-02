@@ -19,6 +19,9 @@ my $context11 = "โมโตโรล่า";
 my $context12 = "โตโรล่า";
 my $context13 = "โมโต";
 my $context14 = "โรล่า";
+
+my $context15 = "สุเทพม็อบ";
+
 # "ส.ส.กทม.เพื่อไทยหยุดเสนอชื่อ 'สุดารัตน์'ชิงผู้ว่าฯกทม."
 #'พี่เป้นั่งตากลมตากลม'
 #'รมว.อุตสาหกรรม พอใจโรดโชว์อินเดีย-บังคลาเทศ ดึงยักษ์ใหญ่ลงทุนในไทย'
@@ -27,7 +30,7 @@ my $context14 = "โรล่า";
 our $tokenizer = novus::thai::collector::tokenizer->new('debug' => 0 );
 # restore hash 
 our $model_engine = Lingua::Model::Ngram->new(
-                    ngram_count => retrieve('./etc/ngram_count_500k.hash') || die "Missing Ngram file",
+                    ngram_count => retrieve('./etc/ngram_count_130k.hash') || die "Missing Ngram file",
                 );
 
 
@@ -42,6 +45,8 @@ _cal_prob($context12);
 _cal_prob($context13);
 _cal_prob($context14);
 
+_cal_prob($context15);
+
 sub _cal_prob {
     my $context = shift;
     
@@ -51,7 +56,7 @@ sub _cal_prob {
     
     print _fix_wild_char_print(join("-", (@{$tokens->{'token'}->{'keyword'}}))) ,
         " [", join("-", (@{$tokens->{'token'}->{'id'}})) , "]",
-        " probability = " , $p , "\n";
+        " probability = " , sprintf("%.15f", $p) , "\n";
 }
 
 sub _fix_wild_char_print {
@@ -59,3 +64,5 @@ sub _fix_wild_char_print {
     
     return encode_utf8($str);
 }
+
+
