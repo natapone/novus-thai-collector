@@ -164,7 +164,12 @@ sub tokenize {
                 # validate Thai vowel rule, first next portion cant be in vowel list!, 1 Thai char = 3 slots
                 my $chk_vowel = substr($context, length($portion_2), 1);
                 
-                if (!defined($vowel_list->{$chk_vowel})) { # if vowel => just skip; dict will picks next shorter word
+                # if vowel => just skip; dict will picks next shorter word
+                # if last character => do not skip; try with dict forst
+                if (!defined($vowel_list->{$chk_vowel})
+                        or length($portion_2) == 1
+                    ) { 
+                    
                     my $id_tohash = $dict_words->{$portion_2};
                     
                     # Set found
@@ -192,8 +197,13 @@ sub tokenize {
             
         }
         # if not find --> cut 1 char --> back to l1
-#        print ("Portion not found, strip '", substr($context, 0, 1), "'\n") unless ($p2_hit);
-        $context = substr($context, 1, length($context)) unless ($p2_hit);
+        unless ($p2_hit) {
+            my $striped_char = substr($context, 0, 1);
+            print ("Portion not found, strip '", $striped_char, "'\n") if ($self->{'debug'} > 3);
+            
+            $context = substr($context, 1, length($context));
+        }
+        
 #        exit;
     }
     

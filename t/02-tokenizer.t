@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use Test::More tests => 12;
+use Test::More tests => 13;
 BEGIN { use_ok('novus::thai::collector') };
 BEGIN { use_ok('novus::thai::schema') };
 BEGIN { use_ok('novus::thai::utils') };
@@ -88,3 +88,19 @@ is($token_string, $expected_string, "id $id_list to token is correct");
 $id_list = '1-1-1-1-1';
 $token_string = $tokenizer->id_to_keyword($id_list, '-');
 is($token_string, $expected_string, "id $id_list to token is correct");
+
+$context = "ม๊อบเฟสล๊อก";
+my $token_ids = $tokenizer->tokenize_id($context);
+#print Dumper($token_ids);
+
+my $string_from_ids = "";
+foreach (@$token_ids) {
+    my $token_string = $tokenizer->id_to_keyword( join(' ', @$_));
+#    print "token_string == $token_string \n";
+    $token_string =~ s/\s+//g;
+    $string_from_ids .= $token_string;
+}
+is(decode_utf8($context), $string_from_ids, "There is no missing character before vowel");
+
+
+
