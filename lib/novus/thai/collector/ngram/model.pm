@@ -48,6 +48,7 @@ has 'ngram_counter' => (is => 'ro', isa => 'Lingua::Model::Ngram::Count',
                     lazy => 1, builder => '_build_ngram_counter');
 
 has 'ngram_category'  => (is => 'rw', isa => 'Str', lazy => 1, default => 0); # all cats
+has 'map_reduce_similarlity' => (is => 'rw', isa => 'Num', lazy => 1, default => 0.70);
 
 sub _build_config {
     return novus::thai::utils->get_config();
@@ -225,10 +226,15 @@ sub _ngram_map_reduce {
     my $self = shift;
     my $ngram_count = shift;
     
-    print Dumper($ngram_count);
+#    print Dumper($ngram_count);
     
-    print "Start map reduce duplicate keys.....!\n";
+    my $map_count = 1;
+    my $dup_detected = 1;
+do {
+    print "Start map reduce duplicate keys ($map_count) .....!\n";
+    $map_count++;
     my $cs = Data::CosineSimilarity->new;
+    $dup_detected = 0;
     
     # create VSM for similarlity check
     foreach my $ngram ( keys %$ngram_count ) {
@@ -237,17 +243,29 @@ sub _ngram_map_reduce {
     }
     
     foreach my $ngram ( 
-        sort { $self->_key_length($a) <=> $self->_key_length($b) }
+        sort { $ngram_count->{$a}->{'key_length'} <=> $ngram_count->{$b}->{'key_length'} }
         keys %$ngram_count ) {
-        
-        print $ngram , " l=", $self->_key_length($ngram) , "\n";
         
         my ($best_label, $r) = $cs->best_for_label($ngram);
         
-        print Dumper($best_label);
-        print Dumper($r);
+##        print "Cmp ", $ngram, " (", $ngram_count->{$ngram}->{'PROB'} , ") ",
+##                " --- ", $best_label, " (", $ngram_count->{$best_label}->{'PROB'} , ") ", "\n";
+        
+        if ($r->cosine > $self->map_reduce_similarlity) {
+            # compare prob
+            if ( $ngram_count->{$best_label}->{'PROB'} > $ngram_count->{$ngram}->{'PROB'} 
+                    and $ngram_count->{$ngram}->{'TF'} > 0
+            ) {
+                # move term count to best label
+                $ngram_count->{$best_label}->{'TF'} += $ngram_count->{$ngram}->{'TF'};
+                $ngram_count->{$ngram}->{'TF'} = 0;
+                
+                $dup_detected++;
+            }
+        }
     }
-    
+} while ($dup_detected > 0 );
+#    print "reduce == ", Dumper($ngram_count); exit;
     
 ###    foreach my $ngram ( 
 ###        sort { $self->_key_length($a) <=> $self->_key_length($b) }
@@ -268,8 +286,9 @@ sub _ngram_map_reduce {
 #####    
 #####    my @keys = grep m/$key1/so => keys %{$ngram_count};
 #####    print Dumper(\@keys);
+
     
-#    print Dumper($ngram_count);
+    return $ngram_count;
 }
 
 sub _list_to_vsm {
